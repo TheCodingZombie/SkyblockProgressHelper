@@ -1,0 +1,50 @@
+
+:root {
+    font-family: Inter, Arial, sans-serif;
+
+    color: #F3F5FA;
+    background: #10141E;
+
+    --background: #10141E;
+    --panel: #1A2231;
+    --panel-light: #222D40;
+    --border: #303B4E;
+
+    --text-primary: #F3F5FA;
+    --text-muted: #A8B4CA;
+
+    --accent: #E9C77B;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background: var(--background);
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+#root {
+    min-height: 100vh;
+}
+
+.app {
+    min-height: 100vh;
+}
