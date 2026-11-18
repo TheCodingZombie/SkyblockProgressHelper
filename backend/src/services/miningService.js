@@ -6,6 +6,56 @@ const { parseItem } = require("../utils/itemParser");
 const { findInventoryItems, parseAccessoryBag } = require("../utils/accessoryStats");
 const { calculateMiningStats } = require("../utils/miningStats");
 
+const { extractItemStats } = require("../utils/gearStats");
+
+const MINING_ITEM_STATS = [
+    "Mining Speed",
+    "Mining Fortune",
+    "Ore Fortune",
+    "Block Fortune",
+    "Gemstone Fortune",
+    "Dwarven Metal Fortune",
+    "Pristine"
+];
+
+function createItemBreakdown(items) {
+    return items.map(item => {
+        const stats = extractItemStats(
+            item,
+            MINING_ITEM_STATS
+        );
+
+        // Preserve parsed lore entries for future source breakdowns.
+        const rawStats = (item.stats ?? [])
+            .filter(stat =>
+                MINING_ITEM_STATS.includes(stat.name)
+            )
+            .map(stat => ({
+                name: stat.name,
+                value: stat.value,
+                details: stat.details,
+                raw: stat.raw
+            }));
+
+        return {
+            id: item.id,
+            name: item.name,
+            rarity: item.rarity,
+            modifier: item.modifier,
+            rarityUpgrades: item.rarityUpgrades ?? 0,
+
+            // Total contribution from this individual item.
+            stats,
+
+            // Parsed stat lore for future popup breakdowns.
+            rawStats,
+
+            // Selected metadata useful for future enhancement parsing.
+            extraAttributes: item.extraAttributes ?? {}
+        };
+    });
+}
+
 async function getMiningStats({ uuid, profileId, consumables = {} }) {
     if (!uuid || !profileId) {
         throw new Error("Player UUID and profile ID are required.");
@@ -75,6 +125,13 @@ async function getMiningStats({ uuid, profileId, consumables = {} }) {
     return {
         ...miningStats,
 
+        // Individual gear contributions
+        itemBreakdown: {
+            armor: createItemBreakdown(armor),
+            equipment: createItemBreakdown(equipment)
+        },
+
+        // Existing accessory data stays intact
         accessoryInfo: {
             count: accessories.length,
             items: accessories.map(accessory => ({

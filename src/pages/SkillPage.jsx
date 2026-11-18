@@ -9,12 +9,14 @@ import {
 
 import { usePlayer } from "../context/PlayerContext";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { getMiningStats } from "../services/miningService";
 
 import "../styles/skillPage.css";
 
-import MiningConsumableSettings from "../components/MiningConsumableSettings";
+import MiningContextSelector from "../components/MiningContextSelector";
+import MiningOverview from "../components/MiningOverview";
+import SkillStatBreakdown from "../components/SkillStatBreakdown";
 
 const skillIcons = {
     mining: Pickaxe,
@@ -22,22 +24,65 @@ const skillIcons = {
     fishing: Fish
 };
 
+
+function buildMiningSections(miningStats) {
+    if (!miningStats) return [];
+
+    const sources = miningStats.sources ?? {};
+    const itemBreakdown = miningStats.itemBreakdown ?? {};
+    const accessoryInfo = miningStats.accessoryInfo ?? {};
+
+    return [
+        {
+            id: "armor",
+            title: "Armor",
+            items: itemBreakdown.armor ?? []
+        },
+        {
+            id: "equipment",
+            title: "Equipment",
+            items: itemBreakdown.equipment ?? []
+        },
+        {
+            id: "accessories",
+            title: "Accessories",
+            items: accessoryInfo.items ?? []
+        },
+        {
+            id: "pet",
+            title: "Pet",
+            petInfo: miningStats.petInfo ?? null,
+            aggregateStats: sources.pet ?? {}
+        },
+        {
+            id: "hotm",
+            title: "Heart of the Mountain",
+            aggregateStats: sources.hotm ?? {}
+        }
+    ];
+}
+
+
 export default function SkillPage({ skill }) {
 
     const { player, clearPlayer } = usePlayer();
 
     const [miningConsumables, setMiningConsumables] = useState({});
 
-    const handleMiningConsumablesChange = useCallback((counts) => {
-        setMiningConsumables(counts);
-    }, []);
+    const handleMiningConsumablesChange = useCallback(
+        counts => {
+            setMiningConsumables(counts);
+        },
+        []
+    );
 
     const Icon = skillIcons[skill.id];
 
     const [miningStats, setMiningStats] = useState(null);
     const [miningLoading, setMiningLoading] = useState(false);
     const [miningError, setMiningError] = useState("");
-
+    const [selectedMiningContext, setSelectedMiningContext] = useState("crystalHollows");
+    
     useEffect(() => {
         if (skill.id !== "mining" || !player) {
             return;
@@ -53,7 +98,12 @@ export default function SkillPage({ skill }) {
                 const result = await getMiningStats(
                     player.profileId,
                     player.uuid,
-                    miningConsumables
+                    {
+                        oreOats: 0,
+                        blockBran: 0,
+                        gemstoneGrahams: 0,
+                        metallicMinis: 0
+                    }
                 );
 
                 if (!cancelled) {
@@ -80,9 +130,46 @@ export default function SkillPage({ skill }) {
     }, [
         skill.id,
         player?.uuid,
-        player?.profileId,
-        miningConsumables
+        player?.profileId
     ]);
+
+    const displayedMiningStats = useMemo(() => {
+        if (!miningStats) return null;
+
+        const consumableBonuses = {
+            "Ore Fortune": (miningConsumables.oreOats ?? 0) * 2,
+            "Block Fortune": (miningConsumables.blockBran ?? 0) * 2,
+            "Gemstone Fortune": (miningConsumables.gemstoneGrahams ?? 0) * 2,
+            "Dwarven Metal Fortune": (miningConsumables.metallicMinis ?? 0) * 2
+        };
+
+        const totals = {
+            ...miningStats.totals
+        };
+
+        const sources = {
+            ...miningStats.sources,
+            consumables: {}
+        };
+
+        for (const [stat, bonus] of Object.entries(consumableBonuses)) {
+            if (bonus === 0) continue;
+
+            totals[stat] = (totals[stat] ?? 0) + bonus;
+            sources.consumables[stat] = bonus;
+        }
+
+        return {
+            ...miningStats,
+            totals,
+            sources,
+            consumableInfo: {
+                counts: miningConsumables
+            }
+        };
+    }, [miningStats, miningConsumables]);
+
+    const miningSections = buildMiningSections(displayedMiningStats);
 
     return (
         <main className="skill-page">
@@ -103,183 +190,90 @@ export default function SkillPage({ skill }) {
                 </div>
 
             </header>
-
-
-            {/* Selected player */}
-            <section className="dashboard-panel">
-
-                <div className="section-heading">
-                    <h2>Selected Player</h2>
-
-                    <User size={20} />
-                </div>
-
-                <div className="player-info">
-
-                    <strong>{player.username}</strong>
-
-                    <button
-                        className="change-player-button"
-                        onClick={clearPlayer}
-                    >
-                        Change Player
-                    </button>
-
-                </div>
-
-                <p className="muted-text">
-                    Currently analyzing {skill.name} progression.
-                </p>
-
-            </section>
-
+            
+            {/* Mining Context */}
             {skill.id === "mining" && (
-                <MiningConsumableSettings
-                    key={`${player.uuid}-${player.profileId}`}
-                    playerUUID={player.uuid}
-                    profileId={player.profileId}
-                    onChange={handleMiningConsumablesChange}
+                <MiningContextSelector
+                    selectedContext={selectedMiningContext}
+                    onChange={setSelectedMiningContext}
                 />
             )}
 
-            {/* Statistics */}
-            <section className="dashboard-panel">
-
-                <div className="section-heading">
-                    <h2>Skill Statistics</h2>
-                    <TrendingUp size={20} />
-                </div>
-
-                <div className="stat-grid">
-
-                    <div className="stat-card">
-                        <span>Skill Level</span>
-                        <strong>--</strong>
-                    </div>
-
-                    <div className="stat-card">
-                        <span>Total XP</span>
-                        <strong>--</strong>
-                    </div>
-
-                    <div className="stat-card">
-                        <span>Next Level</span>
-                        <strong>--</strong>
-                    </div>
-
-                </div>
-
-            </section>
-
+            {/* Mining Overview */}
             {skill.id === "mining" && (
-                <section className="dashboard-panel">
-
-                    <div className="section-heading">
-                        <h2>Mining Statistics</h2>
-                        <Pickaxe size={20} />
-                    </div>
-
+                <>
                     {miningLoading && (
-                        <p className="muted-text">
-                            Calculating Mining statistics...
-                        </p>
+                        <section className="dashboard-panel">
+                            <p className="muted-text">
+                                Loading Mining statistics...
+                            </p>
+                        </section>
                     )}
 
                     {miningError && (
-                        <p className="error-text">
-                            {miningError}
-                        </p>
+                        <section className="dashboard-panel">
+                            <p className="error-text">
+                                {miningError}
+                            </p>
+                        </section>
                     )}
 
-                    {!miningLoading && !miningError && miningStats && (
-                        <>
-                            <div className="stat-grid">
-                                {Object.entries(miningStats.totals).map(
-                                    ([stat, value]) => (
-                                        <div className="stat-card" key={stat}>
-                                            <span>{stat}</span>
-                                            <strong>
-                                                {Number(value).toLocaleString()}
-                                            </strong>
-                                        </div>
-                                    )
-                                )}
-                            </div>
-
-                            <h3>Stat Sources</h3>
-
-                            <div className="mining-source-grid">
-                                {Object.entries(miningStats.sources).map(
-                                    ([source, stats]) => (
-                                        <div
-                                            className="mining-source-card"
-                                            key={source}
-                                        >
-                                            <h4>
-                                                {source.charAt(0).toUpperCase() +
-                                                    source.slice(1)}
-                                            </h4>
-
-                                            {Object.entries(stats).map(
-                                                ([stat, value]) => (
-                                                    <div
-                                                        className="mining-source-row"
-                                                        key={stat}
-                                                    >
-                                                        <span>{stat}</span>
-                                                        <strong>
-                                                            {Number(value).toLocaleString()}
-                                                        </strong>
-                                                    </div>
-                                                )
-                                            )}
-                                        </div>
-                                    )
-                                )}
-                            </div>
-
-                            <h3>Conditional Bonuses</h3>
-
-                            {Object.entries(miningStats.conditional).map(
-                                ([category, bonuses]) => (
-                                    <div key={category}>
-                                        <h4>
-                                            {category.charAt(0).toUpperCase() +
-                                                category.slice(1)}
-                                        </h4>
-
-                                        {Object.entries(bonuses).map(
-                                            ([condition, stats]) => (
-                                                <div
-                                                    className="mining-source-card"
-                                                    key={condition}
-                                                >
-                                                    <strong>{condition}</strong>
-
-                                                    {Object.entries(stats).map(
-                                                        ([stat, value]) => (
-                                                            <div
-                                                                className="mining-source-row"
-                                                                key={stat}
-                                                            >
-                                                                <span>{stat}</span>
-                                                                <strong>
-                                                                    +{Number(value).toLocaleString()}
-                                                                </strong>
-                                                            </div>
-                                                        )
-                                                    )}
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-                                )
-                            )}
-                        </>
+                    {!miningLoading && !miningError && displayedMiningStats && (
+                        <MiningOverview
+                            miningStats={displayedMiningStats}
+                            selectedContext={selectedMiningContext}
+                            playerUUID={player.uuid}
+                            profileId={player.profileId}
+                            onMiningConsumablesChange={handleMiningConsumablesChange}
+                        />
                     )}
+                </>
+            )}
+
+            {/* Statistics for other skills */}
+            {skill.id !== "mining" && (
+                <section className="dashboard-panel">
+
+                    <div className="section-heading">
+                        <h2>Skill Statistics</h2>
+                        <TrendingUp size={20} />
+                    </div>
+
+                    <div className="stat-grid">
+
+                        <div className="stat-card">
+                            <span>Skill Level</span>
+                            <strong>--</strong>
+                        </div>
+
+                        <div className="stat-card">
+                            <span>Total XP</span>
+                            <strong>--</strong>
+                        </div>
+
+                        <div className="stat-card">
+                            <span>Next Level</span>
+                            <strong>--</strong>
+                        </div>
+
+                    </div>
 
                 </section>
             )}
+
+            {/* Full Stat Breakdown */}
+            {skill.id === "mining" && !miningLoading && !miningError && displayedMiningStats && (
+                <SkillStatBreakdown
+                    skillName={skill.name}
+                    totals={displayedMiningStats.totals}
+                    displayedStats={Object.keys(displayedMiningStats.totals)}
+                    sections={miningSections}
+                    conditional={displayedMiningStats.conditional ?? {}}
+                    consumables={miningConsumables}
+                    onConsumablesChange={handleMiningConsumablesChange}
+                />
+            )}
+
 
             {/* Recommendations */}
             <section className="dashboard-panel">

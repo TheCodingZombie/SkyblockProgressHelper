@@ -1,0 +1,70 @@
+
+.mining-context-section {
+    margin-bottom: 22px;
+}
+
+.mining-context-heading {
+    margin-bottom: 14px;
+}
+
+.mining-context-heading h2 {
+    margin: 0 0 6px;
+    font-size: 19px;
+}
+
+.mining-context-heading p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.mining-context-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px;
+
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.mining-context-button {
+    padding: 11px 16px;
+
+    color: var(--text-muted);
+    background: #222D40;
+
+    border: 1px solid transparent;
+    border-radius: 8px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.mining-context-button:hover {
+    color: var(--text-primary);
+    border-color: var(--border);
+    filter: brightness(1.1);
+}
+
+.mining-context-button.active {
+    color: #171B24;
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+@media (max-width: 600px) {
+    .mining-context-selector {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mining-context-button {
+        padding: 11px 8px;
+        text-align: center;
+    }
+}

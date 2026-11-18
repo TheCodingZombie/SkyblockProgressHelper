@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Pickaxe, RotateCcw } from "lucide-react";
+import { RotateCcw, ChevronDown, X, Pickaxe } from "lucide-react";
 
 import "../styles/miningConsumableSettings.css";
 
@@ -8,22 +8,26 @@ const CONSUMABLES = [
     {
         id: "oreOats",
         name: "Ore Oats",
-        stat: "Ore Fortune"
+        stat: "Ore Fortune",
+        description: "Increases Ore Fortune by 2 per use."
     },
     {
         id: "blockBran",
         name: "Block Bran",
-        stat: "Block Fortune"
+        stat: "Block Fortune",
+        description: "Increases Block Fortune by 2 per use."
     },
     {
         id: "gemstoneGrahams",
         name: "Gemstone Grahams",
-        stat: "Gemstone Fortune"
+        stat: "Gemstone Fortune",
+        description: "Increases Gemstone Fortune by 2 per use."
     },
     {
         id: "metallicMinis",
         name: "Metallic Minis",
-        stat: "Dwarven Metal Fortune"
+        stat: "Dwarven Metal Fortune",
+        description: "Increases Dwarven Metal Fortune by 2 per use."
     }
 ];
 
@@ -61,6 +65,186 @@ function loadConsumables(storageKey) {
     }
 }
 
+function ConsumableCard({
+    consumable,
+    count,
+    onLevelChange,
+    onDetails
+}) {
+    const [levelMenuOpen, setLevelMenuOpen] = useState(false);
+
+    const bonus = count * 2;
+
+    return (
+        <div className="mining-item-card consumable-item-card">
+
+            {/* Card Header */}
+            <div className="mining-item-card-header">
+                <div className="mining-item-icon">
+                    <Pickaxe size={22} />
+                </div>
+
+                <div className="mining-item-title">
+                    <strong>{consumable.name}</strong>
+
+                    <span className="mining-item-rarity">
+                        Manually tracked
+                    </span>
+                </div>
+            </div>
+
+            {/* Bonus */}
+            <div className="consumable-card-bonus">
+                <span>{consumable.stat}</span>
+
+                <strong>
+                    +{bonus.toLocaleString()}
+                </strong>
+            </div>
+
+            {/* Level Selector */}
+            <div className="consumable-level-control">
+
+                <span>Uses / Level</span>
+
+                <div className="consumable-level-dropdown">
+
+                    <button
+                        type="button"
+                        className="consumable-level-button"
+                        onClick={() =>
+                            setLevelMenuOpen(previous => !previous)
+                        }
+                        aria-expanded={levelMenuOpen}
+                    >
+                        <span>{count} / 5</span>
+                        <ChevronDown size={16} />
+                    </button>
+
+                    {levelMenuOpen && (
+                        <div className="consumable-level-menu">
+
+                            {[0, 1, 2, 3, 4, 5].map(level => (
+                                <button
+                                    type="button"
+                                    key={level}
+                                    className={
+                                        count === level
+                                            ? "selected"
+                                            : ""
+                                    }
+                                    onClick={() => {
+                                        onLevelChange(level);
+                                        setLevelMenuOpen(false);
+                                    }}
+                                >
+                                    Level {level}
+                                    <span>
+                                        +{level * 2} {consumable.stat}
+                                    </span>
+                                </button>
+                            ))}
+
+                        </div>
+                    )}
+
+                </div>
+            </div>
+
+            {/* Details */}
+            <button
+                type="button"
+                className="mining-item-click-hint consumable-details-button"
+                onClick={onDetails}
+            >
+                Click for breakdown
+            </button>
+
+        </div>
+    );
+}
+
+function ConsumableDetailOverlay({
+    consumable,
+    count,
+    onClose
+}) {
+    if (!consumable) return null;
+
+    const bonus = count * 2;
+
+    return (
+        <div
+            className="mining-item-overlay-backdrop"
+            onClick={onClose}
+        >
+            <div
+                className="mining-item-overlay consumable-detail-overlay"
+                role="dialog"
+                aria-modal="true"
+                aria-label={`${consumable.name} breakdown`}
+                onClick={event => event.stopPropagation()}
+            >
+                <div className="mining-item-overlay-header">
+
+                    <div className="mining-item-icon large">
+                        <Pickaxe size={26} />
+                    </div>
+
+                    <div className="mining-item-title">
+                        <h3>{consumable.name}</h3>
+
+                        <span className="mining-item-rarity">
+                            Manually tracked
+                        </span>
+                    </div>
+
+                    <button
+                        type="button"
+                        className="mining-item-overlay-close"
+                        onClick={onClose}
+                        aria-label="Close breakdown"
+                    >
+                        <X size={20} />
+                    </button>
+
+                </div>
+
+                <div className="mining-item-overlay-content">
+
+                    <h4>Stat Contribution</h4>
+
+                    <div className="mining-overlay-stat-row">
+                        <span>{consumable.stat}</span>
+                        <strong>+{bonus.toLocaleString()}</strong>
+                    </div>
+
+                    <div className="mining-overlay-stat-row">
+                        <span>Selected Level</span>
+                        <strong>{count} / 5</strong>
+                    </div>
+
+                    <div className="mining-overlay-stat-row">
+                        <span>Bonus per level</span>
+                        <strong>+2</strong>
+                    </div>
+
+                    <p className="muted-text mining-overlay-note">
+                        {consumable.description}
+                    </p>
+
+                    <p className="consumable-api-notice">
+                        This consumable is manually tracked.
+                        Its level and bonus are not provided
+                        by the Hypixel API.
+                    </p>
+
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function MiningConsumableSettings({
     playerUUID,
     profileId,
@@ -73,7 +257,15 @@ export default function MiningConsumableSettings({
         () => loadConsumables(storageKey)
     );
 
-    // Save changes and notify the parent component.
+    const [selectedConsumable, setSelectedConsumable] =
+        useState(null);
+
+    // Notify parent when counts are initialized or changed.
+    useEffect(() => {
+        onChange?.(counts);
+    }, [counts, onChange]);
+
+    // Save current counts for this profile.
     useEffect(() => {
         try {
             localStorage.setItem(
@@ -86,21 +278,15 @@ export default function MiningConsumableSettings({
                 error
             );
         }
-
-        onChange?.(counts);
-    }, [counts, storageKey, onChange]);
+    }, [counts, storageKey]);
 
     function updateCount(id, value) {
-        const parsed = Number(value);
+        const updated = {
+            ...counts,
+            [id]: Math.max(0, Math.min(5, Number(value)))
+        };
 
-        const nextValue = Number.isInteger(parsed)
-            ? Math.max(0, Math.min(5, parsed))
-            : 0;
-
-        setCounts(previous => ({
-            ...previous,
-            [id]: nextValue
-        }));
+        setCounts(updated);
     }
 
     function resetCounts() {
@@ -108,64 +294,34 @@ export default function MiningConsumableSettings({
     }
 
     return (
-        <section className="dashboard-panel mining-consumables-panel">
+        <div className="consumable-settings-content">
 
-            <div className="section-heading">
-                <div>
-                    <h2>Permanent Mining Upgrades</h2>
-                    <p className="muted-text">
-                        Track your Dwarven O's consumables.
-                    </p>
-                </div>
-
-                <Pickaxe size={22} />
+            <div className="consumable-api-banner">
+                These consumables are manually tracked and are
+                not provided by the Hypixel API.
             </div>
 
-            <div className="consumable-list">
+            <div className="mining-item-card-grid consumable-card-grid">
 
                 {CONSUMABLES.map(consumable => (
-                    <div
-                        className="consumable-row"
+                    <ConsumableCard
                         key={consumable.id}
-                    >
-                        <div className="consumable-info">
-                            <strong>{consumable.name}</strong>
-
-                            <span>
-                                +2 {consumable.stat} per use
-                            </span>
-                        </div>
-
-                        <div className="consumable-input-group">
-                            <input
-                                type="number"
-                                min="0"
-                                max="5"
-                                step="1"
-                                value={counts[consumable.id]}
-                                onChange={event =>
-                                    updateCount(
-                                        consumable.id,
-                                        event.target.value
-                                    )
-                                }
-                                aria-label={`${consumable.name} uses`}
-                            />
-
-                            <span>/ 5</span>
-                        </div>
-
-                        <strong className="consumable-bonus">
-                            +{counts[consumable.id] * 2}
-                        </strong>
-                    </div>
+                        consumable={consumable}
+                        count={counts[consumable.id] ?? 0}
+                        onLevelChange={level =>
+                            updateCount(consumable.id, level)
+                        }
+                        onDetails={() =>
+                            setSelectedConsumable(consumable)
+                        }
+                    />
                 ))}
 
             </div>
 
             <div className="consumable-footer">
                 <span className="muted-text">
-                    Values are manually tracked and saved automatically.
+                    Saved automatically for this profile.
                 </span>
 
                 <button
@@ -178,6 +334,16 @@ export default function MiningConsumableSettings({
                 </button>
             </div>
 
-        </section>
+            <ConsumableDetailOverlay
+                consumable={selectedConsumable}
+                count={
+                    selectedConsumable
+                        ? counts[selectedConsumable.id] ?? 0
+                        : 0
+                }
+                onClose={() => setSelectedConsumable(null)}
+            />
+
+        </div>
     );
 }
