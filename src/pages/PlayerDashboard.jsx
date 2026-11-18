@@ -1,12 +1,16 @@
 
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Pickaxe, Trees, Fish } from "lucide-react";
+import { Pickaxe, Trees, Fish, LoaderCircle } from "lucide-react";
 
 import { usePlayer } from "../context/PlayerContext";
 import { skills } from "../config/skills";
+import { getSkyblockProfile, getSkillResources, getPlayerEquipment } from "../services/hypixelService";
+import { calculateSkillProgress } from "../utils/skillProgression";
 
 import PlayerProfileCard from "../components/PlayerProfileCard";
 import TopUpgradeCard from "../components/TopUpgradeCard";
+import SkillProgressCard from "../components/SkillProgressCard";
 
 import "../styles/dashboard.css";
 
@@ -16,8 +20,19 @@ const skillIcons = {
     fishing: Fish
 };
 
-// Temporary recommendations.
-// We'll replace these with calculated recommendations later.
+const skillXPFields = {
+    mining: "SKILL_MINING",
+    foraging: "SKILL_FORAGING",
+    fishing: "SKILL_FISHING"
+};
+
+const skillResourceFields = {
+    mining: "MINING",
+    foraging: "FORAGING",
+    fishing: "FISHING"
+};
+
+// Temporary recommendations until we build the recommendation engine.
 const exampleUpgrades = {
     mining: {
         name: "Improve Your Mining Equipment",
@@ -36,13 +51,167 @@ const exampleUpgrades = {
     }
 };
 
+function formatXP(value) {
+    return new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 0
+    }).format(value);
+}
+
 export default function PlayerDashboard() {
-    const { player, clearPlayer } = usePlayer();
+    const {
+        player,
+        switchProfile,
+        clearPlayer
+    } = usePlayer();
+
     const navigate = useNavigate();
+
+    const [memberData, setMemberData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [skillResources, setSkillResources] = useState(null);
+    const [equipmentData, setEquipmentData] = useState(null);
+    
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadProfile() {
+            setLoading(true);
+            setError("");
+            setMemberData(null);
+
+            try {
+                const profile = await getSkyblockProfile(
+                    player.profileId
+                );
+
+                // Normalize the player's UUID by removing hyphens.
+                const normalizedPlayerUUID = player.uuid
+                    .replaceAll("-", "")
+                    .toLowerCase();
+
+                // Find the player's member data, regardless of UUID formatting.
+                const memberEntry = Object.entries(profile?.members ?? {})
+                    .find(([uuid]) =>
+                        uuid.replaceAll("-", "").toLowerCase() ===
+                        normalizedPlayerUUID
+                    );
+
+                if (!memberEntry) {
+                    console.log("Player UUID:", normalizedPlayerUUID);
+                    console.log(
+                        "Profile member UUIDs:",
+                        Object.keys(profile?.members ?? {})
+                    );
+
+                    throw new Error(
+                        "Your player data was not found in this SkyBlock profile."
+                    );
+                }
+
+                // The second element of the entry is the actual member data.
+                const member = memberEntry[1];
+
+                if (!cancelled) {
+                    setMemberData(member);
+                }
+
+            } catch (err) {
+                if (!cancelled) {
+                    setError(err.message);
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+
+            const equipment = await getPlayerEquipment(
+                player.profileId,
+                player.uuid
+            );
+
+            if (cancelled) return;
+
+            setEquipmentData(equipment);
+        }
+
+        if (player?.profileId && player?.uuid) {
+            loadProfile();
+        }
+
+        return () => {
+            cancelled = true;
+        };
+    }, [player?.profileId, player?.uuid]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadSkillResources() {
+            try {
+                const resources = await getSkillResources();
+
+                if (!cancelled) {
+                    setSkillResources(resources);
+                }
+            } catch (err) {
+                console.error("Failed to load skill resources:", err);
+            }
+        }
+
+        loadSkillResources();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const skillProgress = Object.fromEntries(
+        Object.entries(skillXPFields).map(([skillId, xpField]) => {
+            const xp = memberData?.player_data?.experience?.[xpField];
+
+            const resource =
+                skillResources?.[skillResourceFields[skillId]];
+
+            return [
+                skillId,
+                calculateSkillProgress(xp, resource)
+            ];
+        })
+    );
+
+    console.log(
+        "ACCESSORY CALCULATION INPUT:",
+        JSON.stringify({
+            accessories: equipmentData?.talismans?.map(item => ({
+                id: item.id,
+                name: item.name,
+                rarity: item.rarity,
+                rarityUpgrades: item.rarityUpgrades,
+                accessoryPower: item.accessoryPower,
+                stats: item.stats
+            })),
+
+            selectedPower: equipmentData?.accessoryStorage?.selected_power,
+
+            tuning: equipmentData?.accessoryStorage?.tuning
+        }, null, 2)
+    );
 
     function handleChangePlayer() {
         clearPlayer();
-        navigate("/");
+        navigate("/lookup");
+    }
+
+    function handleProfileChange(event) {
+        const selectedProfile = player.profiles.find(
+            profile => profile.profileId === event.target.value
+        );
+
+        if (selectedProfile) {
+            switchProfile(selectedProfile);
+        }
     }
 
     return (
@@ -66,6 +235,7 @@ export default function PlayerDashboard() {
                     <PlayerProfileCard
                         player={player}
                         onChangePlayer={handleChangePlayer}
+                        handleProfileChange={handleProfileChange}
                     />
                 </div>
 
@@ -85,6 +255,23 @@ export default function PlayerDashboard() {
                     </div>
                 </div>
             </div>
+
+            <section className="dashboard-progression">
+                <div className="dashboard-section-heading">
+                    <h2>Skill Progression</h2>
+                    <p>Your current SkyBlock skill levels and experience.</p>
+                </div>
+
+                <div className="statistics-grid">
+                    {Object.values(skills).map(skill => (
+                        <SkillProgressCard
+                            key={skill.id}
+                            skill={skill}
+                            progression={skillProgress[skill.id]}
+                        />
+                    ))}
+                </div>
+            </section>
         </main>
     );
 }

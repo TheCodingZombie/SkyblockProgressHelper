@@ -1,0 +1,198 @@
+
+.mining-overview-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 22px;
+    margin-bottom: 22px;
+    align-items: stretch;
+}
+
+.mining-overview-grid .dashboard-panel {
+    margin-bottom: 0;
+    min-width: 0;
+}
+
+.mining-context-description {
+    margin: -8px 0 18px;
+}
+
+.mining-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.mining-stat-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 17px;
+
+    background: #222D40;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    min-width: 0;
+}
+
+.mining-stat-card span {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.mining-stat-card strong {
+    font-size: 25px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.mining-contributions {
+    margin-top: 24px;
+}
+
+.mining-contributions h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+}
+
+.mining-source-group {
+    background: #1C2636;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.mining-source-group summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 13px 15px;
+
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+
+    list-style: none;
+}
+
+.mining-source-group summary::-webkit-details-marker {
+    display: none;
+}
+
+.mining-source-group summary::after {
+    content: "+";
+    color: var(--text-muted);
+    font-size: 18px;
+}
+
+.mining-source-group[open] summary::after {
+    content: "−";
+}
+
+.source-stat-count {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.mining-source-details {
+    padding: 0 15px 12px;
+}
+
+.mining-source-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 9px 0;
+
+    border-top: 1px solid var(--border);
+
+    font-size: 12px;
+}
+
+.mining-source-row span {
+    color: var(--text-muted);
+}
+
+.mining-source-row strong {
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.mining-rates-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.mining-rates-placeholder {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 260px;
+    padding: 25px;
+
+    text-align: center;
+
+    background: #1C2636;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+}
+
+.mining-rates-placeholder svg {
+    color: var(--accent);
+    margin-bottom: 14px;
+}
+
+.mining-rates-placeholder h3 {
+    margin: 0 0 10px;
+    font-size: 17px;
+}
+
+.mining-rates-placeholder p {
+    max-width: 300px;
+    margin: 0;
+
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+@media (max-width: 850px) {
+    .mining-overview-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .mining-stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mining-stat-card {
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .mining-stat-card strong {
+        font-size: 22px;
+        text-align: right;
+    }
+
+    .mining-rates-placeholder {
+        min-height: 220px;
+    }
+}

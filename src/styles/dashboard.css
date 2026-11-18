@@ -219,3 +219,193 @@
         margin: 10px 0 0;
     }
 }
+
+.selected-profile-name {
+    margin-top: 12px;
+    color: #A8B4CA;
+    font-size: 12px;
+    text-align: center;
+}
+
+.selected-profile-name strong {
+    color: #E9C77B;
+}
+
+.profile-switcher {
+    display: block;
+    width: 180px;
+    max-width: 100%;
+    margin-top: 12px;
+    padding: 9px 12px;
+
+    color: #F3F5FA;
+    background: #222D40;
+    border: 1px solid #46536B;
+    border-radius: 8px;
+
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.profile-switcher:focus {
+    outline: none;
+    border-color: #E9C77B;
+}
+
+.profile-switcher option {
+    color: #F3F5FA;
+    background: #222D40;
+}
+
+.dashboard-statistics {
+    margin-top: 40px;
+}
+
+.dashboard-statistics .dashboard-section-heading {
+    margin-bottom: 20px;
+}
+
+.dashboard-statistics .dashboard-section-heading h2 {
+    color: #F3F5FA;
+    font-size: 21px;
+}
+
+.dashboard-statistics .dashboard-section-heading p {
+    color: #A8B4CA;
+    font-size: 13px;
+}
+
+.statistics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.statistics-card {
+    padding: 22px;
+    background: #1A2231;
+    border: 1px solid #303B4E;
+    border-top: 3px solid var(--skill-color);
+    border-radius: 11px;
+}
+
+.statistics-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 22px;
+    color: var(--skill-color);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.statistics-card > strong {
+    display: block;
+    color: #F3F5FA;
+    font-size: 25px;
+    overflow-wrap: anywhere;
+}
+
+.statistics-label {
+    display: block;
+    margin-top: 7px;
+    color: #A8B4CA;
+    font-size: 11px;
+}
+
+.statistics-message {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 25px;
+    color: #A8B4CA;
+    background: #1A2231;
+    border-radius: 10px;
+}
+
+.loading-icon {
+    animation: statistics-spin 1s linear infinite;
+}
+
+@keyframes statistics-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.statistics-error {
+    padding: 16px;
+    color: #F08080;
+    background: #351F29;
+    border: 1px solid #70404B;
+    border-radius: 9px;
+    font-size: 13px;
+}
+
+@media (max-width: 700px) {
+    .statistics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.skill-progress-card {
+    padding: 22px;
+    background: #1A2231;
+    border: 1px solid #303B4E;
+    border-top: 3px solid var(--skill-color);
+    border-radius: 11px;
+}
+
+.skill-progress-heading,
+.skill-progress-name,
+.skill-progress-details {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.skill-progress-name {
+    justify-content: flex-start;
+    gap: 10px;
+    color: var(--skill-color);
+}
+
+.skill-progress-name h3 {
+    margin: 0;
+    color: #F3F5FA;
+    font-size: 17px;
+}
+
+.skill-progress-heading > strong {
+    color: var(--skill-color);
+}
+
+.skill-progress-bar {
+    height: 9px;
+    margin-top: 22px;
+    overflow: hidden;
+    background: #303B4E;
+    border-radius: 20px;
+}
+
+.skill-progress-fill {
+    height: 100%;
+    background: var(--skill-color);
+    border-radius: 20px;
+    transition: width 0.4s ease;
+}
+
+.skill-progress-details {
+    gap: 10px;
+    margin-top: 10px;
+    color: #A8B4CA;
+    font-size: 11px;
+}
+
+.skill-progress-total {
+    margin-top: 18px;
+    padding-top: 13px;
+    border-top: 1px solid #303B4E;
+    color: #A8B4CA;
+    font-size: 12px;
+}
